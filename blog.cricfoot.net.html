@@ -237,7 +237,7 @@
               document.getElementById('twitter-description').content = `Watch ${team1} vs ${team2} live stream on YoSinTV, your source for sports matches.`;
               document.getElementById('canonical-url').href = window.location.href;
               matchNameElement.textContent = `${name} Live Details`;
-              matchDateTimeElement.textContent = `Start: ${startTime}`;
+              matchDateTimeElement.textContent = `Match Time: ${startTime}`;
               const progressContainer = document.createElement('div');
               progressContainer.className = 'w-full bg-gray-200 rounded-full h-6 mb-4';
               const progressBar = document.createElement('div');
@@ -252,7 +252,7 @@
               title.textContent = `${name} - Match Details`;
               const startPara = document.createElement('p');
               startPara.className = 'text-sm text-gray-600';
-              startPara.textContent = `Start: ${startTime}`;
+              startPara.textContent = `Match Time: ${startTime}`;
               const faqTitle = document.createElement('h3');
               faqTitle.className = 'text-2xl font-bold border-b-2 border-gray-200 pb-2 text-gray-900';
               faqTitle.textContent = 'Frequently Asked Questions';
