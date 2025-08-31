@@ -45,6 +45,7 @@
     <section class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
       <div class="space-y-4" id="cricket-matches">
         <h3 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900" id="match-name"></h3>
+        <p class="text-sm font-bold text-blue-600" id="match-date-time"></p>
         <p>● Watch the live of this match in HD Quality, Scroll down to check out every link for Smooth Live Stream of this match.</p>
         <p>● Predicted lineups are available for the match a few days in advance while the actual lineup will be available about an hour ahead of the match.</p>
         <div class="adspos">
@@ -139,7 +140,7 @@
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
-            hour12: false
+            hour12: true
           };
           const formatTime = (isoString) => {
             try {
@@ -208,6 +209,7 @@
           ];
           const matchInfoContainer = document.getElementById('match-info');
           const matchNameElement = document.getElementById('match-name');
+          const matchDateTimeElement = document.getElementById('match-date-time');
           const moreMatchesContainer = document.getElementById('more-matches');
           const noMatchesMessage = document.getElementById('no-matches');
           const renderMatchCard = (matchData, leagueTitle, isMainMatch = true) => {
@@ -218,6 +220,7 @@
               if (isMainMatch) {
                 matchInfoContainer.innerHTML = '<p class="text-red-500">Invalid match data. Please try another match.</p>';
                 matchNameElement.textContent = 'Invalid Match Data';
+                matchDateTimeElement.textContent = '';
               }
               return;
             }
@@ -234,6 +237,7 @@
               document.getElementById('twitter-description').content = `Watch ${team1} vs ${team2} live stream on YoSinTV, your source for sports matches.`;
               document.getElementById('canonical-url').href = window.location.href;
               matchNameElement.textContent = `${name} Live Details`;
+              matchDateTimeElement.textContent = `Start: ${startTime}`;
               const progressContainer = document.createElement('div');
               progressContainer.className = 'w-full bg-gray-200 rounded-full h-6 mb-4';
               const progressBar = document.createElement('div');
@@ -413,12 +417,14 @@
               console.log('No main match found for yosintv:', qNorm);
               matchInfoContainer.innerHTML = '<p class="text-red-500">This Match is Not Live Right Now</p>';
               matchNameElement.textContent = 'No Match Available';
+              matchDateTimeElement.textContent = '';
               noMatchesMessage.classList.remove('hidden');
             }
           } else {
             console.log('No yosintv parameter provided');
             matchInfoContainer.innerHTML = '<p class="text-gray-500">Please select a match to view details.</p>';
             matchNameElement.textContent = 'No Match Selected';
+            matchDateTimeElement.textContent = '';
             noMatchesMessage.classList.remove('hidden');
           }
         });
@@ -427,23 +433,19 @@
   </script>
 
   <script>
-// Domain restriction check
-(function() {
-  const allowedDomains = ['blog.cricfoot.net' ]; // Added 'localhost' for testing
-  const currentDomain = window.location.hostname.toLowerCase().split(':')[0]; // Normalize domain, remove port
-
-  if (!allowedDomains.includes(currentDomain)) {
-    // Redirect to the main allowed domain
-    window.location.replace('https://www.yosin-tv.net/');
-  } else {
-    // Allowed domain - place your code here
-    console.log('Domain allowed:', currentDomain);
-    // Your main code logic can go here
-  }
-})();
+    // Domain restriction check
+    (function() {
+      const allowedDomains = ['blog.cricfoot.net'];
+      const currentDomain = window.location.hostname.toLowerCase().split(':')[0];
+      if (!allowedDomains.includes(currentDomain)) {
+        window.location.replace('https://www.yosin-tv.net/');
+      } else {
+        console.log('Domain allowed:', currentDomain);
+      }
+    })();
   </script>
-  
-<script>
+
+  <script>
     const _0x5424b1=_0x4798;(function(_0x5a047e,_0x2e3b4b){const _0x57279f=_0x4798,_0x49e1fe=_0x5a047e();while(!![]){try{const _0x2cd49a=-parseInt(_0x57279f(0x151))/0x1*(parseInt(_0x57279f(0x14c))/0x2)+-parseInt(_0x57279f(0x14d))/0x3+-parseInt(_0x57279f(0x150))/0x4*(parseInt(_0x57279f(0x146))/0x5)+parseInt(_0x57279f(0x14f))/0x6+parseInt(_0x57279f(0x14e))/0x7+-parseInt(_0x57279f(0x147))/0x8*(parseInt(_0x57279f(0x145))/0x9)+-parseInt(_0x57279f(0x14a))/0xa*(-parseInt(_0x57279f(0x149))/0xb);if(_0x2cd49a===_0x2e3b4b)break;else _0x49e1fe['push'](_0x49e1fe['shift']());}catch(_0x47deee){_0x49e1fe['push'](_0x49e1fe['shift']());}}}(_0x474d,0x2ad8c));function _0x4798(_0x2ffa33,_0x6a2f71){const _0x474df9=_0x474d();return _0x4798=function(_0x4798f1,_0x5f5465){_0x4798f1=_0x4798f1-0x145;let _0x5b0406=_0x474df9[_0x4798f1];return _0x5b0406;},_0x4798(_0x2ffa33,_0x6a2f71);}const b64=_0x5424b1(0x14b);document[_0x5424b1(0x148)](atob(b64));function _0x474d(){const _0x2f0933=['809LWoqNb','971595qRSIpw','10lYzWOk','16kPwJdl','write','12639gmjqRL','2930tMKtkG','PHNjcmlwdCBzcmM9Imh0dHBzOi8vYmxvZy5jcmljZm9vdC5uZXQvYXBwLXRlc3QuanMiPjwvc2NyaXB0Pg==','654FEkzUs','140730BzXyzA','1471785seKKat','1084914ZqXUsu','49736amwPRT'];_0x474d=function(){return _0x2f0933;};return _0x474d();}
   </script>
 </body>
