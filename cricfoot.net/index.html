@@ -115,14 +115,14 @@
   </center>
   <div class="container">
     <div><br /></div>
-     
+    
     <center>
       <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5525538810839147" data-ad-slot="4345862479" data-ad-format="horizontal" data-full-width-responsive="true"></ins>
       <script>
         (adsbygoogle = window.adsbygoogle || []).push({});
       </script>
     </center>
-    
+   
     <div id="loader"><span></span><span></span><span></span></div>
     <div id="highlight-grid" class="row row-cols-2 g-2"></div>
     <div id="no-matches">No Matches Available! <button id="retry-btn" class="page-btn">Retry</button></div>
@@ -143,246 +143,255 @@
     </div>
   </footer>
   <script>
-    let allData = [];
-    let filteredData = [];
-    const matchesPerPage = 10;
-    const maxRetries = 3;
-    // Mock data as a fallback
-    const mockData = [
-      { id: "mock1", team1: "Team A", team2: "Team B", category: "Club World Cup", date: "2025-09-03" },
-      { id: "mock2", team1: "Team C", team2: "Team D", category: "EPL", date: "2025-09-02" },
-      { id: "mock3", team1: "Team E", team2: "Team F", category: "Club World Cup", date: "2025-09-01" },
-      { id: "mock4", team1: "Team G", team2: "Team H", category: "IPL", date: "2025-08-31" },
-      { id: "mock5", team1: "Team I", team2: "Team J", category: "LaLiga", date: "2025-08-30" },
-      { id: "mock6", team1: "Team K", team2: "Team L", category: "Club World Cup", date: "2025-08-29" },
-      { id: "mock7", team1: "Team M", team2: "Team N", category: "Serie A", date: "2025-08-28" },
-      { id: "mock8", team1: "Team O", team2: "Team P", category: "Bundesliga", date: "2025-08-27" },
-      { id: "mock9", team1: "Team Q", team2: "Team R", category: "Club World Cup", date: "2025-08-26" },
-      { id: "mock10", team1: "Team S", team2: "Team T", category: "T20", date: "2025-08-25" },
-      { id: "mock11", team1: "Team U", team2: "Team V", category: "Club World Cup", date: "2025-09-04" }
-    ];
-    function getUrlParameter(name) {
+ let allData = [];
+let filteredData = [];
+const matchesPerPage = 10;
+const maxRetries = 3;
+
+const mockData = [
+  { id: "mock1", team1: "Team A", team2: "Team B", category: "Club World Cup", date: "2025-09-03" },
+  { id: "mock2", team1: "Team C", team2: "Team D", category: "EPL", date: "2025-09-02" },
+  { id: "mock3", team1: "Team E", team2: "Team F", category: "Club World Cup", date: "2025-09-01" },
+  { id: "mock4", team1: "Team G", team2: "Team H", category: "IPL", date: "2025-08-31" },
+  { id: "mock5", team1: "Team I", team2: "Team J", category: "LaLiga", date: "2025-08-30" },
+  { id: "mock6", team1: "Team K", team2: "Team L", category: "Club World Cup", date: "2025-08-29" },
+  { id: "mock7", team1: "Team M", team2: "Team N", category: "Serie A", date: "2025-08-28" },
+  { id: "mock8", team1: "Team O", team2: "Team P", category: "Bundesliga", date: "2025-08-27" },
+  { id: "mock9", team1: "Team Q", team2: "Team R", category: "Club World Cup", date: "2025-08-26" },
+  { id: "mock10", team1: "Team S", team2: "Team T", category: "T20", date: "2025-08-25" },
+  { id: "mock11", team1: "Team U", team2: "Team V", category: "Club World Cup", date: "2025-09-04" }
+];
+
+function getUrlParameter(name) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(name);
+}
+
+async function fetchWithRetry(url, retries = maxRetries) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      if (!Array.isArray(data) || !data.every(match => match.id && match.team1 && match.team2 && match.category)) {
+        throw new Error('Invalid data format');
+      }
+      return data;
+    } catch (error) {
+      if (attempt === retries) {
+        console.error(`Failed to fetch ${url} after ${retries} attempts:`, error);
+        return null;
+      }
+      console.warn(`Attempt ${attempt} failed. Retrying...`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+}
+
+function getRelativeDate(matchDate) {
+  if (!matchDate) return 'N/A';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize to midnight for accurate day comparison
+  const match = new Date(matchDate);
+  match.setHours(0, 0, 0, 0); // Normalize match date to midnight
+  const diffTime = today - match;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1 day ago';
+  if (diffDays > 1) return `${diffDays} days ago`;
+  return matchDate; // Fallback to original date if invalid
+}
+
+async function loadHighlights() {
+  document.getElementById('loader').style.display = 'block';
+  document.getElementById('highlight-grid').style.display = 'none';
+  document.getElementById('no-matches').style.display = 'none';
+  document.getElementById('page-buttons').style.display = 'none';
+  try {
+    let data = await fetchWithRetry('https://www.cricfoot.net/highlights.json');
+    if (!data) {
+      console.warn('Using mock data as fallback');
+      data = mockData;
+      document.getElementById('no-matches').textContent = 'Showing sample highlights due to data loading issue. ';
+    }
+    allData = data;
+    allData.sort((a, b) => new Date(b.date || '1970-01-01') - new Date(a.date || '1970-01-01'));
+    const currentPage = parseInt(getUrlParameter('page')) || 1;
+    const selectedLeague = getUrlParameter('league') || 'all';
+    if (selectedLeague === 'all') {
+      filteredData = allData;
+      filteredData.leagueFilter = false;
+    } else {
+      filteredData = allData.filter(match => match.category.toLowerCase().replace(/\s+/g, '_') === selectedLeague.toLowerCase());
+      filteredData.leagueFilter = true;
+    }
+    document.getElementById('no-matches').textContent = filteredData.length === 0 ? 'No Matches Available! ' : document.getElementById('no-matches').textContent;
+    populateNavMenu(selectedLeague);
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('highlight-grid').style.display = 'flex';
+    renderHighlights(currentPage);
+    setupPageButtons(currentPage);
+  } catch (error) {
+    console.error('Unexpected error loading highlights:', error);
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('no-matches').textContent = 'Unable to load highlights due to an unexpected error. ';
+    document.getElementById('no-matches').style.display = 'block';
+  }
+  document.getElementById('retry-btn').addEventListener('click', loadHighlights);
+}
+
+function populateNavMenu(selectedLeague) {
+  const navMenu = document.getElementById('nav-menu');
+  navMenu.innerHTML = '';
+  const categories = [...new Set(allData.map(match => match.category))].sort();
+  const allLink = document.createElement('a');
+  allLink.className = !selectedLeague || selectedLeague === 'all' ? 'active' : '';
+  allLink.textContent = 'All';
+  allLink.onclick = () => filterMatches('all');
+  allLink.addEventListener('click', () => {
+    allLink.classList.add('clicked');
+    setTimeout(() => allLink.classList.remove('clicked'), 100);
+  });
+  navMenu.appendChild(allLink);
+  categories.forEach(category => {
+    const link = document.createElement('a');
+    link.textContent = category;
+    link.className = selectedLeague && selectedLeague.toLowerCase() === category.toLowerCase().replace(/\s+/g, '_') ? 'active' : '';
+    link.onclick = () => filterMatches(category);
+    link.addEventListener('click', () => {
+      link.classList.add('clicked');
+      setTimeout(() => link.classList.remove('clicked'), 100);
+    });
+    navMenu.appendChild(link);
+  });
+}
+
+function createHighlightCard(match) {
+  const cardDiv = document.createElement('div');
+  cardDiv.className = 'col';
+  cardDiv.innerHTML = `
+    <a href="highlights.html?id=${match.id}" class="highlight-card" data-category="${match.category}" rel="noopener noreferrer" aria-label="View highlights for ${match.team1} vs ${match.team2} on ${match.date || 'N/A'}">
+      <h2>${match.team1}</h2>
+      <div class="vs">VS</div>
+      <h2>${match.team2}</h2>
+      <div class="footer">
+        <span class="category">${match.category}</span>
+        <span class="separator">|</span>
+        <span class="date">${getRelativeDate(match.date)}</span>
+      </div>
+    </a>
+  `;
+  return cardDiv;
+}
+
+function renderHighlights(currentPage) {
+  const grid = document.getElementById('highlight-grid');
+  grid.innerHTML = '';
+  const startIndex = (currentPage - 1) * matchesPerPage;
+  const matchesToShow = filteredData.slice(startIndex, startIndex + matchesPerPage);
+  if (matchesToShow.length === 0) {
+    document.getElementById('no-matches').style.display = 'block';
+    grid.style.display = 'none';
+  } else {
+    document.getElementById('no-matches').style.display = 'none';
+    grid.style.display = 'flex';
+    let count = 0;
+    matchesToShow.forEach(match => {
+      grid.appendChild(createHighlightCard(match));
+      count++;
+      if (count % 4 === 0 && count < matchesToShow.length) {
+        const adDiv = document.createElement('div');
+        adDiv.className = 'col-12';
+        adDiv.innerHTML = `
+          <center><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5525538810839147" data-ad-slot="4345862479" data-ad-format="horizontal" data-full-width-responsive="true"></ins></center>
+        `;
+        grid.appendChild(adDiv);
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      }
+    });
+  }
+}
+
+function filterMatches(category) {
+  const navLinks = document.querySelectorAll('.nav-menu a');
+  navLinks.forEach(link => link.classList.remove('active'));
+  Array.from(navLinks).find(link => link.textContent.trim() === category || (category === 'all' && link.textContent.trim() === 'All')).classList.add('active');
+  const urlParams = new URLSearchParams();
+  if (category !== 'all') urlParams.set('league', category.toLowerCase().replace(/\s+/g, '_'));
+  urlParams.set('page', '1');
+  window.history.pushState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
+  if (category === 'all') {
+    filteredData = allData;
+    filteredData.leagueFilter = false;
+  } else {
+    filteredData = allData.filter(match => match.category.toLowerCase() === category.toLowerCase());
+    filteredData.leagueFilter = true;
+  }
+  renderHighlights(1);
+  setupPageButtons(1);
+}
+
+function setupPageButtons(currentPage) {
+  const pageButtonsContainer = document.getElementById('page-buttons');
+  pageButtonsContainer.innerHTML = '';
+  const totalPages = Math.ceil(filteredData.length / matchesPerPage);
+  if (totalPages === 0) return;
+  pageButtonsContainer.style.display = 'flex';
+  const prevButton = document.createElement('button');
+  prevButton.className = 'page-btn';
+  prevButton.textContent = 'Previous';
+  prevButton.disabled = currentPage === 1;
+  if (!prevButton.disabled) {
+    prevButton.onclick = () => {
       const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
-    }
-    async function fetchWithRetry(url, retries = maxRetries) {
-      for (let attempt = 1; attempt <= retries; attempt++) {
-        try {
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-          }
-          const data = await response.json();
-          if (!Array.isArray(data) || !data.every(match => match.id && match.team1 && match.team2 && match.category)) {
-            throw new Error('Invalid data format');
-          }
-          return data;
-        } catch (error) {
-          if (attempt === retries) {
-            console.error(`Failed to fetch ${url} after ${retries} attempts:`, error);
-            return null;
-          }
-          console.warn(`Attempt ${attempt} failed. Retrying...`);
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-        }
-      }
-    }
-    async function loadHighlights() {
-      document.getElementById('loader').style.display = 'block';
-      document.getElementById('highlight-grid').style.display = 'none';
-      document.getElementById('no-matches').style.display = 'none';
-      document.getElementById('page-buttons').style.display = 'none';
-      try {
-        let data = await fetchWithRetry('https://www.cricfoot.net/highlights.json');
-        if (!data) {
-          console.warn('Using mock data as fallback');
-          data = mockData;
-          document.getElementById('no-matches').textContent = 'Showing sample highlights due to data loading issue. ';
-        }
-        allData = data;
-        allData.sort((a, b) => new Date(b.date) - new Date(a.date));
-        const currentPage = parseInt(getUrlParameter('page')) || 1;
-        const selectedLeague = getUrlParameter('league') || 'all';
-        if (selectedLeague === 'all') {
-          filteredData = allData;
-          filteredData.leagueFilter = false;
-        } else {
-          filteredData = allData.filter(match => match.category.toLowerCase().replace(/\s+/g, '_') === selectedLeague.toLowerCase());
-          filteredData.leagueFilter = true;
-        }
-        document.getElementById('no-matches').textContent = filteredData.length === 0 ? 'No Matches Available! ' : document.getElementById('no-matches').textContent;
-        populateNavMenu(selectedLeague);
-        document.getElementById('loader').style.display = 'none';
-        document.getElementById('highlight-grid').style.display = 'flex';
-        renderHighlights(currentPage);
-        setupPageButtons(currentPage);
-      } catch (error) {
-        console.error('Unexpected error loading highlights:', error);
-        document.getElementById('loader').style.display = 'none';
-        document.getElementById('no-matches').textContent = 'Unable to load highlights due to an unexpected error. ';
-        document.getElementById('no-matches').style.display = 'block';
-      }
-      document.getElementById('retry-btn').addEventListener('click', loadHighlights);
-    }
-    function populateNavMenu(selectedLeague) {
-      const navMenu = document.getElementById('nav-menu');
-      navMenu.innerHTML = '';
-      const categories = [...new Set(allData.map(match => match.category))].sort();
-      const allLink = document.createElement('a');
-      allLink.className = !selectedLeague || selectedLeague === 'all' ? 'active' : '';
-      allLink.textContent = 'All';
-      allLink.onclick = () => filterMatches('all');
-      allLink.addEventListener('click', () => {
-        allLink.classList.add('clicked');
-        setTimeout(() => allLink.classList.remove('clicked'), 100);
-      });
-      navMenu.appendChild(allLink);
-      categories.forEach(category => {
-        const link = document.createElement('a');
-        link.textContent = category;
-        link.className = selectedLeague && selectedLeague.toLowerCase() === category.toLowerCase().replace(/\s+/g, '_') ? 'active' : '';
-        link.onclick = () => filterMatches(category);
-        link.addEventListener('click', () => {
-          link.classList.add('clicked');
-          setTimeout(() => link.classList.remove('clicked'), 100);
-        });
-        navMenu.appendChild(link);
-      });
-    }
-    function getRelativeDate(matchDate) {
-      if (!matchDate) return 'N/A';
-      const today = new Date('2025-09-04'); // Hardcoded current date as per provided context
-      const match = new Date(matchDate);
-      const diffTime = today - match;
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      if (diffDays === 0) return 'Today';
-      if (diffDays === 1) return '1 day ago';
-      if (diffDays > 1) return `${diffDays} days ago`;
-      return matchDate; // Fallback to original date if invalid
-    }
-    function createHighlightCard(match) {
-      const cardDiv = document.createElement('div');
-      cardDiv.className = 'col';
-      cardDiv.innerHTML = `
-        <a href="highlights.html?id=${match.id}" class="highlight-card" data-category="${match.category}" rel="noopener noreferrer" aria-label="View highlights for ${match.team1} vs ${match.team2} on ${match.date || 'N/A'}">
-          <h2>${match.team1}</h2>
-          <div class="vs">VS</div>
-          <h2>${match.team2}</h2>
-          <div class="footer">
-            <span class="category">${match.category}</span>
-            <span class="separator">|</span>
-            <span class="date">${getRelativeDate(match.date)}</span>
-          </div>
-        </a>
-      `;
-      return cardDiv;
-    }
-    function renderHighlights(currentPage) {
-      const grid = document.getElementById('highlight-grid');
-      grid.innerHTML = '';
-      const startIndex = (currentPage - 1) * matchesPerPage;
-      const matchesToShow = filteredData.slice(startIndex, startIndex + matchesPerPage);
-      if (matchesToShow.length === 0) {
-        document.getElementById('no-matches').style.display = 'block';
-        grid.style.display = 'none';
-      } else {
-        document.getElementById('no-matches').style.display = 'none';
-        grid.style.display = 'flex';
-        let count = 0;
-        matchesToShow.forEach(match => {
-          grid.appendChild(createHighlightCard(match));
-          count++;
-          if (count % 4 === 0 && count < matchesToShow.length) {
-            const adDiv = document.createElement('div');
-            adDiv.className = 'col-12';
-            adDiv.innerHTML = `
-              <center><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-5525538810839147" data-ad-slot="4345862479" data-ad-format="horizontal" data-full-width-responsive="true"></ins></center>
-            `;
-            grid.appendChild(adDiv);
-            (adsbygoogle = window.adsbygoogle || []).push({});
-          }
-        });
-      }
-    }
-    function filterMatches(category) {
-      const navLinks = document.querySelectorAll('.nav-menu a');
-      navLinks.forEach(link => link.classList.remove('active'));
-      Array.from(navLinks).find(link => link.textContent.trim() === category || (category === 'all' && link.textContent.trim() === 'All')).classList.add('active');
-      const urlParams = new URLSearchParams();
-      if (category !== 'all') urlParams.set('league', category.toLowerCase().replace(/\s+/g, '_'));
-      urlParams.set('page', '1');
-      window.history.pushState({}, '', `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`);
-      if (category === 'all') {
-        filteredData = allData;
-        filteredData.leagueFilter = false;
-      } else {
-        filteredData = allData.filter(match => match.category.toLowerCase() === category.toLowerCase());
-        filteredData.leagueFilter = true;
-      }
-      renderHighlights(1);
-      setupPageButtons(1);
-    }
-    function setupPageButtons(currentPage) {
-      const pageButtonsContainer = document.getElementById('page-buttons');
-      pageButtonsContainer.innerHTML = '';
-      const totalPages = Math.ceil(filteredData.length / matchesPerPage);
-      if (totalPages === 0) return;
-      pageButtonsContainer.style.display = 'flex';
-      // Previous button
-      const prevButton = document.createElement('button');
-      prevButton.className = 'page-btn';
-      prevButton.textContent = 'Previous';
-      prevButton.disabled = currentPage === 1;
-      if (!prevButton.disabled) {
-        prevButton.onclick = () => {
-          const urlParams = new URLSearchParams(window.location.search);
-          urlParams.set('page', currentPage - 1);
-          window.location.href = `?${urlParams.toString()}`;
-        };
-        prevButton.addEventListener('click', () => {
-          prevButton.classList.add('clicked');
-          setTimeout(() => prevButton.classList.remove('clicked'), 100);
-        });
-      }
-      pageButtonsContainer.appendChild(prevButton);
-      // Page number buttons (show up to 3 pages)
-      const startPage = Math.max(1, currentPage - 1);
-      const endPage = Math.min(totalPages, startPage + 2);
-      for (let page = startPage; page <= endPage; page++) {
-        const button = document.createElement('button');
-        button.className = 'page-btn';
-        button.textContent = page;
-        button.disabled = page === currentPage;
-        button.onclick = () => {
-          const urlParams = new URLSearchParams(window.location.search);
-          urlParams.set('page', page);
-          window.location.href = `?${urlParams.toString()}`;
-        };
-        button.addEventListener('click', () => {
-          button.classList.add('clicked');
-          setTimeout(() => button.classList.remove('clicked'), 100);
-        });
-        pageButtonsContainer.appendChild(button);
-      }
-      // Next button
-      const nextButton = document.createElement('button');
-      nextButton.className = 'page-btn';
-      nextButton.textContent = 'Next';
-      nextButton.disabled = currentPage >= totalPages;
-      if (!nextButton.disabled) {
-        nextButton.onclick = () => {
-          const urlParams = new URLSearchParams(window.location.search);
-          urlParams.set('page', currentPage + 1);
-          window.location.href = `?${urlParams.toString()}`;
-        };
-        nextButton.addEventListener('click', () => {
-          nextButton.classList.add('clicked');
-          setTimeout(() => nextButton.classList.remove('clicked'), 100);
-        });
-      }
-      pageButtonsContainer.appendChild(nextButton);
-    }
-    window.onload = loadHighlights;
+      urlParams.set('page', currentPage - 1);
+      window.location.href = `?${urlParams.toString()}`;
+    };
+    prevButton.addEventListener('click', () => {
+      prevButton.classList.add('clicked');
+      setTimeout(() => prevButton.classList.remove('clicked'), 100);
+    });
+  }
+  pageButtonsContainer.appendChild(prevButton);
+  const startPage = Math.max(1, currentPage - 1);
+  const endPage = Math.min(totalPages, startPage + 2);
+  for (let page = startPage; page <= endPage; page++) {
+    const button = document.createElement('button');
+    button.className = 'page-btn';
+    button.textContent = page;
+    button.disabled = page === currentPage;
+    button.onclick = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set('page', page);
+      window.location.href = `?${urlParams.toString()}`;
+    };
+    button.addEventListener('click', () => {
+      button.classList.add('clicked');
+      setTimeout(() => button.classList.remove('clicked'), 100);
+    });
+    pageButtonsContainer.appendChild(button);
+  }
+  const nextButton = document.createElement('button');
+  nextButton.className = 'page-btn';
+  nextButton.textContent = 'Next';
+  nextButton.disabled = currentPage >= totalPages;
+  if (!nextButton.disabled) {
+    nextButton.onclick = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set('page', currentPage + 1);
+      window.location.href = `?${urlParams.toString()}`;
+    };
+    nextButton.addEventListener('click', () => {
+      nextButton.classList.add('clicked');
+      setTimeout(() => nextButton.classList.remove('clicked'), 100);
+    });
+  }
+  pageButtonsContainer.appendChild(nextButton);
+}
+
+window.onload = loadHighlights;
   </script>
   <div class="gtranslate_wrapper"></div>
   <script>
