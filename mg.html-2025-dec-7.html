@@ -3,55 +3,113 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YoSinTV API Generator</title>
+<title>YoSinTV Football JSON + Preview</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-  body {transition:all .3s} 
-  body.dark-mode{background:#121212;color:#fff}
-  .json-box{white-space:pre-wrap;font-family:'Courier New',monospace;background:#f8f9fa;padding:1.5rem;border-radius:12px;min-height:220px;overflow-x:auto;border:2px solid #0f0}
-  body.dark-mode .json-box{background:#1e1e1e;color:#0f0;border-color:#0f0}
+  body {transition:all .3s;background:#f9fafb;font-family:system-ui,-apple-system,sans-serif}
+  body.dark{background:#121212;color:#e5e7eb}
+  .container{max-width:1000px;margin:0 auto;padding:20px}
   textarea{font-family:monospace;resize:none}
-  .container{max-width:900px;margin:0 auto;padding:20px}
-  .sticky-nav{position:fixed;top:50%;right:20px;transform:translateY(-50%);gap:12px;z-index:1000}
-  .sticky-nav .btn{width:180px;text-align:left}
+
+  /* Sticky Right Panel - Perfectly Centered Vertically */
+  .sticky-right {
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .sticky-right .btn {
+    width: 190px;
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    border-radius: 12px;
+  }
+  body.dark .sticky-right .btn {box-shadow:0 6px 20px rgba(0,0,0,0,0.6)}
+
   .toast{background:#28a745;color:#fff;padding:1rem 2rem;border-radius:12px;position:fixed;top:20px;right:20px;z-index:1050;opacity:0;transition:opacity .4s;box-shadow:0 8px 25px rgba(0,0,0,0.5)}
-  .toast.show{opacity:1} 
-  body.dark-mode .toast{background:#218838}
+  .toast.show{opacity:1}
+  body.dark .toast{background:#218838}
+
+  /* Match Card - Your Beautiful Design */
+  .match-card{display:block;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);border:1px solid #e5e7eb;padding:16px;margin:16px auto;background:#fff;width:calc(100% - 1rem);max-width:960px;transition:all .25s}
+  .dark .match-card{background:#374151;border-color:#4b5563;box-shadow:0 4px 10px rgba(0,0,0,0.5)}
+  .match-card:hover{box-shadow:0 6px 14px rgba(0,0,0,0.15);border-color:#93c5fd}
+  .dark .match-card:hover{border-color:#60a5fa}
+  .match-card-content{display:flex;flex-direction:column;gap:10px}
+  .match-row-teams{display:flex;align-items:center;justify-content:space-between;width:100%}
+  .match-team{flex-grow:1;flex-basis:0;min-width:0;display:flex;align-items:center;gap:10px;flex-shrink:1}
+  .match-team.home{justify-content:flex-end}
+  .match-team.away{justify-content:flex-start}
+  .match-team img{width:48px;height:48px;object-fit:contain;flex-shrink:0}
+  .match-team-name{font-size:1.125rem;font-weight:700;color:#1f2937;flex-grow:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dark .match-team-name{color:#f3f4f6}
+  .match-team.home .match-team-name{order:-1;text-align:right}
+  .match-team.away .match-team-name{order:1;text-align:left}
+  .match-center{flex-shrink:0;min-width:100px;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .match-local-time{font-size:0.95rem;font-weight:600;color:#4b5563;margin-bottom:4px}
+  .dark .match-local-time{color:#9ca3af}
+  .match-status{font-size:0.75rem!important;font-weight:700;padding:5px 10px;border-radius:9999px;display:inline-block;min-width:70px;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+  .match-status-countdown{background:#10b981;color:white}
+  .match-status-live{background:#ef4444;color:white;animation:pulse 1.2s infinite}
+  .match-status-over{background:#6b7280;color:#fff}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+  @media(max-width:640px){
+    .match-team-name{font-size:0.875rem;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.2}
+    .match-team img{width:36px;height:36px}
+    .match-center{min-width:80px}
+    .match-card{padding:12px}
+    .match-team{gap:8px}
+  }
 </style>
 </head>
 <body class="bg-light">
 
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">YoSinTV Football JSON + Preview</h2>
+    <button id="themeToggle" class="btn btn-outline-secondary">Dark Mode</button>
   </div>
 
   <div class="mb-4">
-    <textarea id="matchInput" class="form-control" rows="18" placeholder=" "> 
-  </textarea>
+    <label class="form-label fw-bold">Paste your matches</label>
+    <textarea id="matchInput" class="form-control" rows="16"> </textarea>
   </div>
 
-  <button class="btn btn-success btn-lg w-100 mb-5" onclick="generate(true)">Generate Match API</button>
+  <button class="btn btn-success btn-lg w-100 mb-5" onclick="generate(true)">GENERATE + SHOW PREVIEW</button>
 
-  <div class="card border-success">
+  <div class="card border-success mb-5">
     <div class="card-body">
-      <h5 class="card-title text-success">football.json – Ready to Deploy</h5>
-      <button class="btn btn-outline-success btn-sm mb-3" onclick="copy()">COPY JSON</button>
-      <pre id="jsonOutput" class="json-box">Your perfect JSON will appear here...</pre>
+      <h5 class="card-title text-success">football.json</h5>
+      <button class="btn btn-outline-success btn-sm mb-3" onclick="copyJSON()">COPY JSON</button>
+      <pre id="jsonOutput" class="json-box">Click generate to see your JSON...</pre>
     </div>
   </div>
+
+  <h4 class="text-center mb-4 text-success">Live Match Preview</h4>
+  <div id="previewContainer"></div>
 </div>
 
-<div class="sticky-nav d-flex flex-column">
+<!-- PERFECTLY CENTERED STICKY RIGHT BUTTONS -->
+<div class="sticky-right">
   <button class="btn btn-success shadow" onclick="generate(true)">Generate</button>
-  <button class="btn btn-info shadow" onclick="copy()">Copy JSON</button>
+  <button class="btn btn-primary shadow" onclick="copyJSON()">Copy JSON</button>
+  <button class="btn btn-info shadow" onclick="scrollToPreview()">Match Preview</button>
 </div>
 
 <div class="toast" id="toast">Done!</div>
 
 <script>
-// YOUR 5 SPECIAL LOGOS — ALWAYS PRIORITY
+// LOGO SYSTEM
 const specialLogos = {
 
+
+  // https://gemini.google.com/app/391a058fa6ade2ea
   // FotMob high quality logos (auto matched by team name)
  "arsenal":"https://images.fotmob.com/image_resources/logo/teamlogo/9825.png",
  "manchester city":"https://images.fotmob.com/image_resources/logo/teamlogo/8456.png",
@@ -529,130 +587,177 @@ const specialLogos = {
  "atletico de san luis":"https://images.fotmob.com/image_resources/logo/teamlogo/6358.png",
  "mazatlan":"https://images.fotmob.com/image_resources/logo/teamlogo/1170234.png",
  "leon":"https://images.fotmob.com/image_resources/logo/teamlogo/1841.png",
- "puebla":"https://images.fotmob.com/image_resources/logo/teamlogo/7847.png"
+ "puebla":"https://images.fotmob.com/image_resources/logo/teamlogo/7847.png",
 
-
+//UEFA 2025/26
+  "arsenal": "https://images.fotmob.com/image_resources/logo/teamlogo/9825.png",
+  "psg": "https://images.fotmob.com/image_resources/logo/teamlogo/9847.png",
+  "inter": "https://images.fotmob.com/image_resources/logo/teamlogo/8636.png",
+  "real madrid": "https://images.fotmob.com/image_resources/logo/teamlogo/8633.png",
+  "borussia dortmund": "https://images.fotmob.com/image_resources/logo/teamlogo/9789.png",
+  "chelsea": "https://images.fotmob.com/image_resources/logo/teamlogo/8455.png",
+  "sporting cp": "https://images.fotmob.com/image_resources/logo/teamlogo/9768.png",
+  "manchester city": "https://images.fotmob.com/image_resources/logo/teamlogo/8456.png",
+  "atalanta": "https://images.fotmob.com/image_resources/logo/teamlogo/8524.png",
+  "newcastle united": "https://images.fotmob.com/image_resources/logo/teamlogo/10261.png",
+  "atletico madrid": "https://images.fotmob.com/image_resources/logo/teamlogo/9906.png",
+  "liverpool": "https://images.fotmob.com/image_resources/logo/teamlogo/8650.png",
+  "galatasaray": "https://images.fotmob.com/image_resources/logo/teamlogo/8637.png",
+  "psv eindhoven": "https://images.fotmob.com/image_resources/logo/teamlogo/8640.png",
+  "tottenham hotspur": "https://images.fotmob.com/image_resources/logo/teamlogo/8586.png",
+  "bayer leverkusen": "https://images.fotmob.com/image_resources/logo/teamlogo/8178.png",
+  "barcelona": "https://images.fotmob.com/image_resources/logo/teamlogo/8634.png",
+  "qarabag fk": "https://images.fotmob.com/image_resources/logo/teamlogo/7981.png",
+  "napoli": "https://images.fotmob.com/image_resources/logo/teamlogo/9875.png",
+  "marseille": "https://images.fotmob.com/image_resources/logo/teamlogo/8592.png",
+  "juventus": "https://images.fotmob.com/image_resources/logo/teamlogo/9885.png",
+  "monaco": "https://images.fotmob.com/image_resources/logo/teamlogo/9829.png",
+  "pafos fc": "https://images.fotmob.com/image_resources/logo/teamlogo/2137.png",
+  "union stgilloise": "https://images.fotmob.com/image_resources/logo/teamlogo/7978.png",
+  "club-brugge": "https://images.fotmob.com/image_resources/logo/teamlogo/8342.png",
+  "athletic club": "https://images.fotmob.com/image_resources/logo/teamlogo/8315.png",
+  "eintracht frankfurt": "https://images.fotmob.com/image_resources/logo/teamlogo/9810.png",
+  "fc kobenhavn": "https://images.fotmob.com/image_resources/logo/teamlogo/8391.png",
+  "benfica": "https://images.fotmob.com/image_resources/logo/teamlogo/9772.png",
+  "slavia prague": "https://images.fotmob.com/image_resources/logo/teamlogo/7787.png",
+  "bodoglimt": "https://images.fotmob.com/image_resources/logo/teamlogo/8402.png",
+  "olympiacos": "https://images.fotmob.com/image_resources/logo/teamlogo/8638.png",
+  "villarreal": "https://images.fotmob.com/image_resources/logo/teamlogo/10205.png",
+  "kairat almaty": "https://images.fotmob.com/image_resources/logo/teamlogo/8037.png",
+  "ajax": "https://images.fotmob.com/image_resources/logo/teamlogo/8593.png"
+  
+  
 };
 
-// AUTO-DETECT ANY TEAM → FOTMOB LOGO + FALLBACK
+const teamMap = { };
+
 function getLogo(team) {
-  const name = team.toLowerCase().trim();
-
-  // 1. Your special logos first
-  for (const key in specialLogos) {
-    if (name.includes(key)) return specialLogos[key];
-  }
-
-  // 2. Smart FotMob team ID detection
-  const teamMap = { };
-
-  for (const key in teamMap) {
-    if (name.includes(key)) {
-      return `https://images.fotmob.com/image_resources/logo/teamlogo/${teamMap[key]}.png`;
-    }
-  }
-
-  // 3. FINAL FALLBACK — YOUR LOGO
+  const low = team.toLowerCase().trim();
+  for (const k in specialLogos) if (low.includes(k)) return specialLogos[k];
+  for (const k in teamMap) if (low.includes(k)) return `https://images.fotmob.com/image_resources/logo/teamlogo/${teamMap[k]}.png`;
   return "https://cdn.yosintv.link/football.png";
 }
 
-// Date parsing: "7 December", "Dec 08", "9 Dec"
 function parseCustomDate(line) {
   line = line.trim();
   const months = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,
                   january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
-
   let m = line.match(/^(\d{1,2})\s+([a-zA-Z]+)/i);
-  if (m) {
-    const day = parseInt(m[1]);
-    const month = months[m[2].toLowerCase()];
-    if (month) return `2025-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-  }
-
+  if (m) { const d=parseInt(m[1]); const mon=months[m[2].toLowerCase()]; if(mon) return `2025-${String(mon).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
   m = line.match(/([a-zA-Z]+)\s*(\d{1,2})/i);
-  if (m) {
-    const month = months[m[1].toLowerCase()];
-    const day = parseInt(m[2]);
-    if (month) return `2025-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-  }
+  if (m) { const mon=months[m[1].toLowerCase()]; const d=parseInt(m[2]); if(mon) return `2025-${String(mon).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
   return null;
 }
 
-function generate(showToast = false) {
+// Convert 24h → 12h format with AM/PM
+function format12Hour(time24) {
+  let [h, m] = time24.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${m.toString().padStart(2,'0')} ${ampm}`;
+}
+
+function getTimeStatus(startISO) {
+  const now = new Date();
+  const start = new Date(startISO);
+  const diff = start - now;
+  if (diff > 0) {
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    return {text: `${h}h ${m}m`, cls: "match-status-countdown"};
+  }
+  if (now < new Date(start.getTime() + 2*60*60*1000)) return {text: "Live", cls: "match-status-live"};
+  return {text: "End", cls: "match-status-over"};
+}
+
+function generate(showToast=false) {
   const raw = document.getElementById('matchInput').value.trim();
   if (!raw) return;
 
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
   const matches = [];
   let currentDate = null;
+  let previewHTML = "";
 
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
-
     const date = parseCustomDate(line);
-    if (date) {
-      currentDate = date;
-      i++;
-      continue;
-    }
+    if (date) { currentDate = date; i++; continue; }
 
     if (/^\d{1,2}:\d{2}$/.test(line)) {
       const time = line;
       const matchLine = lines[i+1] || "";
       const slug = (lines[i+2] || "watch").toLowerCase();
 
-      if (!matchLine.includes(' vs ')) {
-        i++;
-        continue;
-      }
+      if (!matchLine.includes(' vs ')) { i++; continue; }
 
-      const [h, m = "00"] = time.split(':').map(x=>x.padStart(2,'0'));
+      const [h, m="00"] = time.split(':').map(x=>x.padStart(2,'0'));
       let useDate = currentDate || new Date().toISOString().slice(0,10);
-      if (!currentDate && parseInt(h) < 6) {
-        const next = new Date();
-        next.setDate(next.getDate()+1);
+      if (!currentDate && parseInt(h)<6) {
+        const next = new Date(); next.setDate(next.getDate()+1);
         useDate = next.toISOString().slice(0,10);
       }
-
       const start = `${useDate}T${h}:${m}:00+09:00`;
       const [team1, team2] = matchLine.split(' vs ').map(t=>t.trim());
 
-      matches.push({
-        team1: team1,
-        team1_logo: getLogo(team1),
-        team2: team2,
-        team2_logo: getLogo(team2),
-        start,
-        details_url: `https://blog.cricfoot.net/?yosintv=${slug}`,
-        duration: 2
-      });
+      const logo1 = getLogo(team1);
+      const logo2 = getLogo(team2);
+      const status = getTimeStatus(start);
+      const time12 = format12Hour(time);
+
+      matches.push({team1,team1_logo:logo1,team2,team2_logo:logo2,start,
+        details_url:`https://blog.cricfoot.net/?yosintv=${slug}`,duration:2});
+
+      previewHTML += `
+        <div class="match-card">
+          <div class="match-card-content">
+            <div class="match-row-teams">
+              <div class="match-team home">
+                <span class="match-team-name">${team1}</span>
+                <img src="${logo1}" onerror="this.src='https://cdn.yosintv.link/football.png'">
+              </div>
+              <div class="match-center">
+                <div class="match-local-time">${time12} </div>
+                <div class="match-status ${status.cls}">${status.text}</div>
+              </div>
+              <div class="match-team away">
+                <img src="${logo2}" onerror="this.src='https://cdn.yosintv.link/football.png'">
+                <span class="match-team-name">${team2}</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
 
       i += 3;
-    } else {
-      i++;
-    }
+    } else i++;
   }
 
   const json = JSON.stringify({matches}, null, 4).replace(/},\n/g, '},\n\n');
   document.getElementById('jsonOutput').textContent = json;
+  document.getElementById('previewContainer').innerHTML = previewHTML || "<p class='text-center text-muted'>No matches to preview</p>";
 
   localStorage.setItem('footballJSON', json);
   localStorage.setItem('lastInput', raw);
 
-  if (showToast) toast("Generated!");
+  if (showToast) toast("Generated + Preview Updated!");
 }
 
-function copy() {
+function copyJSON() {
   navigator.clipboard.writeText(document.getElementById('jsonOutput').textContent);
-  toast("Copied!");
+  toast("JSON Copied!");
+}
+
+function scrollToPreview() {
+  document.getElementById('previewContainer').scrollIntoView({behavior: 'smooth'});
+  toast("Scrolled to Preview!");
 }
 
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 window.onload = () => {
