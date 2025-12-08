@@ -1,0 +1,521 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YoSinTV Football JSON + Preview</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  body {transition:all .3s;background:#f9fafb;font-family:system-ui,-apple-system,sans-serif}
+  body.dark{background:#121212;color:#e5e7eb}
+  .container{max-width:1000px;margin:0 auto;padding:20px}
+  textarea{font-family:monospace;resize:none}
+
+  /* Sticky Right Panel - Perfectly Centered Vertically */
+  .sticky-right {
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .sticky-right .btn {
+    width: 190px;
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    border-radius: 12px;
+  }
+  body.dark .sticky-right .btn {box-shadow:0 6px 20px rgba(0,0,0,0,0.6)}
+
+  .toast{background:#28a745;color:#fff;padding:1rem 2rem;border-radius:12px;position:fixed;top:20px;right:20px;z-index:1050;opacity:0;transition:opacity .4s;box-shadow:0 8px 25px rgba(0,0,0,0.5)}
+  .toast.show{opacity:1}
+  body.dark .toast{background:#218838}
+
+  /* Match Card - Your Beautiful Design */
+  .match-card{display:block;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);border:1px solid #e5e7eb;padding:16px;margin:16px auto;background:#fff;width:calc(100% - 1rem);max-width:960px;transition:all .25s}
+  .dark .match-card{background:#374151;border-color:#4b5563;box-shadow:0 4px 10px rgba(0,0,0,0.5)}
+  .match-card:hover{box-shadow:0 6px 14px rgba(0,0,0,0.15);border-color:#93c5fd}
+  .dark .match-card:hover{border-color:#60a5fa}
+  .match-card-content{display:flex;flex-direction:column;gap:10px}
+  .match-row-teams{display:flex;align-items:center;justify-content:space-between;width:100%}
+  .match-team{flex-grow:1;flex-basis:0;min-width:0;display:flex;align-items:center;gap:10px;flex-shrink:1}
+  .match-team.home{justify-content:flex-end}
+  .match-team.away{justify-content:flex-start}
+  .match-team img{width:48px;height:48px;object-fit:contain;flex-shrink:0}
+  .match-team-name{font-size:1.125rem;font-weight:700;color:#1f2937;flex-grow:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dark .match-team-name{color:#f3f4f6}
+  .match-team.home .match-team-name{order:-1;text-align:right}
+  .match-team.away .match-team-name{order:1;text-align:left}
+  .match-center{flex-shrink:0;min-width:100px;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .match-local-time{font-size:0.95rem;font-weight:600;color:#4b5563;margin-bottom:4px}
+  .dark .match-local-time{color:#9ca3af}
+  .match-status{font-size:0.75rem!important;font-weight:700;padding:5px 10px;border-radius:9999px;display:inline-block;min-width:70px;text-align:center;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+  .match-status-countdown{background:#10b981;color:white}
+  .match-status-live{background:#ef4444;color:white;animation:pulse 1.2s infinite}
+  .match-status-over{background:#6b7280;color:#fff}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+  @media(max-width:640px){
+    .match-team-name{font-size:0.875rem;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.2}
+    .match-team img{width:36px;height:36px}
+    .match-center{min-width:80px}
+    .match-card{padding:12px}
+    .match-team{gap:8px}
+  }
+</style>
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">YoSinTV Football JSON + Preview</h2>
+    <button id="themeToggle" class="btn btn-outline-secondary">Dark Mode</button>
+  </div>
+
+  <div class="mb-4">
+    <label class="form-label fw-bold">Paste your matches</label>
+    <textarea id="matchInput" class="form-control" rows="16"> </textarea>
+  </div>
+
+  <button class="btn btn-success btn-lg w-100 mb-5" onclick="generate(true)">GENERATE + SHOW PREVIEW</button>
+
+  <div class="card border-success mb-5">
+    <div class="card-body">
+      <h5 class="card-title text-success">football.json</h5>
+      <button class="btn btn-outline-success btn-sm mb-3" onclick="copyJSON()">COPY JSON</button>
+      <pre id="jsonOutput" class="json-box">Click generate to see your JSON...</pre>
+    </div>
+  </div>
+
+  <h4 class="text-center mb-4 text-success">Live Match Preview</h4>
+  <div id="previewContainer"></div>
+</div>
+
+<!-- PERFECTLY CENTERED STICKY RIGHT BUTTONS -->
+<div class="sticky-right">
+  <button class="btn btn-success shadow" onclick="generate(true)">Generate</button>
+  <button class="btn btn-primary shadow" onclick="copyJSON()">Copy JSON</button>
+  <button class="btn btn-info shadow" onclick="scrollToPreview()">Match Preview</button>
+</div>
+
+<div class="toast" id="toast">Done!</div>
+
+<script>
+// LOGO SYSTEM
+const specialLogos = {
+
+   // https://gemini.google.com/app/391a058fa6ade2ea
+  
+//ICC Full Member Nations
+ "afghanistan": "https://aimages.willow.tv/teamLogos/afghanistan.png",
+ "australia": "https://aimages.willow.tv/teamLogos/australia.png",
+ "bangladesh": "https://aimages.willow.tv/teamLogos/bangladesh.png",
+ "england": "https://aimages.willow.tv/teamLogos/england.png",
+ "india": "https://aimages.willow.tv/teamLogos/india.png",
+ "ireland": "https://aimages.willow.tv/teamLogos/ireland.png",
+ "new zealand": "https://aimages.willow.tv/teamLogos/newzealand.png",
+ "pakistan": "https://aimages.willow.tv/teamLogos/pakistan.png",
+ "south africa": "https://aimages.willow.tv/teamLogos/southafrica.png",
+ "sri lanka": "https://aimages.willow.tv/teamLogos/srilanka.png",
+ "west indies": "https://aimages.willow.tv/teamLogos/westindies.png",
+ "zimbabwe": "https://aimages.willow.tv/teamLogos/zimbabwe.png",
+  
+  
+//ICC Associate Member Nations - Americas (17)
+ "argentina": "https://aimages.willow.tv/teamLogos/argentina.png",
+ "bahamas": "https://aimages.willow.tv/teamLogos/bahamas.png",
+ "belize": "https://aimages.willow.tv/teamLogos/belize.png",
+ "bermuda": "https://aimages.willow.tv/teamLogos/bermuda.png",
+ "brazil": "https://aimages.willow.tv/teamLogos/brazil.png",
+ "canada": "https://aimages.willow.tv/teamLogos/canada.png",
+ "cayman islands": "https://aimages.willow.tv/teamLogos/caymanislands.png",
+ "chile": "https://aimages.willow.tv/teamLogos/chile.png",
+ "costa rica": "https://aimages.willow.tv/teamLogos/costarica.png",
+ "falkland islands": "https://aimages.willow.tv/teamLogos/falklandislands.png",
+ "mexico": "https://aimages.willow.tv/teamLogos/mexico.png",
+ "panama": "https://aimages.willow.tv/teamLogos/panama.png",
+ "peru": "https://aimages.willow.tv/teamLogos/peru.png",
+ "suriname": "https://aimages.willow.tv/teamLogos/suriname.png",
+ "turks and caicos islands": "https://aimages.willow.tv/teamLogos/turksandcaicosislands.png",
+ "usa": "https://aimages.willow.tv/teamLogos/usa.png",
+ "vibrant (us Virgin Islands)": "https://aimages.willow.tv/teamLogos/usvirginislands.png",
+
+//ICC Associate Member Nations - Africa (22)
+ "botswana": "https://aimages.willow.tv/teamLogos/botswana.png",
+ "cameroon": "https://aimages.willow.tv/teamLogos/cameroon.png",
+ "cote d'ivoire": "https://aimages.willow.tv/teamLogos/cotedivoire.png",
+ "eswatini": "https://aimages.willow.tv/teamLogos/eswatini.png",
+ "gambia": "https://aimages.willow.tv/teamLogos/gambia.png",
+ "ghana": "https://aimages.willow.tv/teamLogos/ghana.png",
+ "kenya": "https://aimages.willow.tv/teamLogos/kenya.png",
+ "lesotho": "https://aimages.willow.tv/teamLogos/lesotho.png",
+ "madagascar": "https://aimages.willow.tv/teamLogos/madagascar.png",
+ "malawi": "https://aimages.willow.tv/teamLogos/malawi.png",
+ "mali": "https://aimages.willow.tv/teamLogos/mali.png",
+ "morocco": "https://aimages.willow.tv/teamLogos/morocco.png",
+ "mozambique": "https://aimages.willow.tv/teamLogos/mozambique.png",
+ "namibia": "https://aimages.willow.tv/teamLogos/namibia.png",
+ "nigeria": "https://aimages.willow.tv/teamLogos/nigeria.png",
+ "rwanda": "https://aimages.willow.tv/teamLogos/rwanda.png",
+ "seychelles": "https://aimages.willow.tv/teamLogos/seychelles.png",
+ "sierra leone": "https://aimages.willow.tv/teamLogos/sierraleone.png",
+ "st helena": "https://aimages.willow.tv/teamLogos/sthelena.png",
+ "tanzania": "https://aimages.willow.tv/teamLogos/tanzania.png",
+ "uganda": "https://aimages.willow.tv/teamLogos/uganda.png",
+ "zambia": "https://aimages.willow.tv/teamLogos/zambia.png",
+
+//ICC Associate Member Nations - Asia (24)
+ "bahrain": "https://aimages.willow.tv/teamLogos/bahrain.png",
+ "bhutan": "https://aimages.willow.tv/teamLogos/bhutan.png",
+ "cambodia": "https://aimages.willow.tv/teamLogos/cambodia.png",
+ "china": "https://aimages.willow.tv/teamLogos/china.png",
+ "hong kong": "https://aimages.willow.tv/teamLogos/hongkong.png",
+ "iran": "https://aimages.willow.tv/teamLogos/iran.png",
+ "kuwait": "https://aimages.willow.tv/teamLogos/kuwait.png",
+ "malaysia": "https://aimages.willow.tv/teamLogos/malaysia.png",
+ "maldives": "https://aimages.willow.tv/teamLogos/maldives.png",
+ "myanmar": "https://aimages.willow.tv/teamLogos/myanmar.png",
+ "nepal": "https://aimages.willow.tv/teamLogos/nepal.png",
+ "oman": "https://aimages.willow.tv/teamLogos/oman.png",
+ "qatar": "https://aimages.willow.tv/teamLogos/qatar.png",
+ "saudi arabia": "https://aimages.willow.tv/teamLogos/saudiarabia.png",
+ "singapore": "https://aimages.willow.tv/teamLogos/singapore.png",
+ "thailand": "https://aimages.willow.tv/teamLogos/thailand.png",
+ "uae": "https://aimages.willow.tv/teamLogos/unitedarabemirates.png",
+ "uzbekistan": "https://aimages.willow.tv/teamLogos/uzbekistan.png",
+
+//ICC Associate Member Nations - East Asia-Pacific (11)
+ "cook islands": "https://aimages.willow.tv/teamLogos/cookislands.png",
+ "fiji": "https://aimages.willow.tv/teamLogos/fiji.png",
+ "indonesia": "https://aimages.willow.tv/teamLogos/indonesia.png",
+ "japan": "https://aimages.willow.tv/teamLogos/japan.png",
+ "philippines": "https://aimages.willow.tv/teamLogos/philippines.png",
+ "papua new guinea": "https://aimages.willow.tv/teamLogos/papuanewguinea.png",
+ "samoa": "https://aimages.willow.tv/teamLogos/samoa.png",
+ "south korea": "https://aimages.willow.tv/teamLogos/southkorea.png",
+ "tonga": "https://aimages.willow.tv/teamLogos/tonga.png",
+ "vanuatu": "https://aimages.willow.tv/teamLogos/vanuatu.png",
+
+//ICC Associate Member Nations - Europe (34)
+ "austria": "https://aimages.willow.tv/teamLogos/austria.png",
+ "belgium": "https://aimages.willow.tv/teamLogos/belgium.png",
+ "bulgaria": "https://aimages.willow.tv/teamLogos/bulgaria.png",
+ "croatia": "https://aimages.willow.tv/teamLogos/croatia.png",
+ "cyprus": "https://aimages.willow.tv/teamLogos/cyprus.png",
+ "czech republic": "https://aimages.willow.tv/teamLogos/czechrepublic.png",
+ "denmark": "https://aimages.willow.tv/teamLogos/denmark.png",
+ "estonia": "https://aimages.willow.tv/teamLogos/estonia.png",
+ "finland": "https://aimages.willow.tv/teamLogos/finland.png",
+ "france": "https://aimages.willow.tv/teamLogos/france.png",
+ "germany": "https://aimages.willow.tv/teamLogos/germany.png",
+ "gibraltar": "https://aimages.willow.tv/teamLogos/gibraltar.png",
+ "greece": "https://aimages.willow.tv/teamLogos/greece.png",
+ "guernsey": "https://aimages.willow.tv/teamLogos/guernsey.png",
+ "hungary": "https://aimages.willow.tv/teamLogos/hungary.png",
+ "isle of man": "https://aimages.willow.tv/teamLogos/isleofman.png",
+ "israel": "https://aimages.willow.tv/teamLogos/israel.png",
+ "italy": "https://aimages.willow.tv/teamLogos/italy.png",
+ "jersey": "https://aimages.willow.tv/teamLogos/jersey.png",
+ "luxembourg": "https://aimages.willow.tv/teamLogos/luxembourg.png",
+ "malta": "https://aimages.willow.tv/teamLogos/malta.png",
+ "netherlands": "https://aimages.willow.tv/teamLogos/netherlands.png",
+ "norway": "https://aimages.willow.tv/teamLogos/norway.png",
+ "portugal": "https://aimages.willow.tv/teamLogos/portugal.png",
+ "romania": "https://aimages.willow.tv/teamLogos/romania.png",
+ "scotland": "https://aimages.willow.tv/teamLogos/scotland.png",
+ "serbia": "https://aimages.willow.tv/teamLogos/serbia.png",
+ "slovenia": "https://aimages.willow.tv/teamLogos/slovenia.png",
+ "spain": "https://aimages.willow.tv/teamLogos/spain.png",
+ "sweden": "https://aimages.willow.tv/teamLogos/sweden.png",
+ "switzerland": "https://aimages.willow.tv/teamLogos/switzerland.png",
+ "turkey": "https://aimages.willow.tv/teamLogos/turkey.png",
+ "ukraine": "https://aimages.willow.tv/teamLogos/ukraine.png",
+  
+  
+  //NPL Teams
+  "biratnagar kings": "https://cdn.yosintv.link/npl/biratnagar.png",
+  "chitwan rhinos": "https://cdn.yosintv.link/npl/chitwan.png",
+  "janakpur bolts": "https://cdn.yosintv.link/npl/janakpur.png",
+  "karnali yaks": "https://cdn.yosintv.link/npl/karnali.png",
+  "kathmandu gorkhas": "https://cdn.yosintv.link/npl/kathmandu.png",
+  "lumbini lions": "https://cdn.yosintv.link/npl/lumbini.png",
+  "pokhara avengers": "https://cdn.yosintv.link/npl/pokhara.png",
+  "sudurpaschim royals": "https://aimages.willow.tv/teamLogos/vistariders.png",
+  
+  
+  //Abu Dhabi T10
+  "ajman titans": "https://aimages.willow.tv/teamLogos/ajmantitans.png",
+  "aspinstallions": "https://aimages.willow.tv/teamLogos/aspinstallions.png",
+  "bangla tigers": "https://aimages.willow.tv/teamLogos/banglatigers.png",
+  "chennai braves": "https://aimages.willow.tv/teamLogos/chennaibraves.png",
+  "deccan gladiators": "https://aimages.willow.tv/teamLogos/deccangladiators.png",
+  "morrisville samp army": "https://aimages.willow.tv/teamLogos/samparmy.png",
+  "new york strikers": "https://aimages.willow.tv/teamLogos/newyorkstrikers.png",
+  "northern warriors": "https://aimages.willow.tv/teamLogos/northernwarriors.png",
+  "quetta qavalry": "https://aimages.willow.tv/teamLogos/quettaqavalry.png",
+  "royal champs": "https://aimages.willow.tv/teamLogos/royalchamps.png",
+  "team abu dhabi": "https://aimages.willow.tv/teamLogos/teamabudhabi.png",
+  "uae bulls": "https://aimages.willow.tv/teamLogos/uaebulls.png",
+  "vista riders": "https://aimages.willow.tv/teamLogos/vistariders.png",
+
+
+ //Indian Premier League Teams
+ "chennai super kings": "https://aimages.willow.tv/teamLogos/chennaisuperkings.png",
+ "delhi capitals": "https://aimages.willow.tv/teamLogos/delhicapitals.png",
+ "gujarat titans": "https://aimages.willow.tv/teamLogos/gujarattitans.png",
+ "kolkata knight riders": "https://aimages.willow.tv/teamLogos/kolkataknightriders.png",
+ "lucknow super giants": "https://aimages.willow.tv/teamLogos/lucknowsupergiants.png",
+ "mumbai indians": "https://aimages.willow.tv/teamLogos/mumbaiindians.png",
+ "punjab kings": "https://aimages.willow.tv/teamLogos/punjabkings.png",
+ "rajasthan royals": "https://aimages.willow.tv/teamLogos/rajasthanroyals.png",
+ "royal challengers bengaluru": "https://aimages.willow.tv/teamLogos/royalchallengersbengaluru.png",
+ "sunrisers hyderabad": "https://aimages.willow.tv/teamLogos/sunrisershyderabad.png",
+  
+  
+//Pakistan Super League Teams
+ "islamabad united": "https://aimages.willow.tv/teamLogos/islamabadunited.png",
+ "karachi kings": "https://aimages.willow.tv/teamLogos/karachikings.png",
+ "lahore qalandars": "https://aimages.willow.tv/teamLogos/lahoreqalandars.png",
+ "multan sultans": "https://aimages.willow.tv/teamLogos/multansultans.png",
+ "peshawar zalmi": "https://aimages.willow.tv/teamLogos/peshawarzalmi.png",
+ "quetta gladiators": "https://aimages.willow.tv/teamLogos/quettagladiators.png",
+  
+  //Big Bash League Teams
+ "adelaide strikers": "https://aimages.willow.tv/teamLogos/adelaidestrikers.png",
+ "brisbane heat": "https://aimages.willow.tv/teamLogos/brisbaneheat.png",
+ "hobart hurricanes": "https://aimages.willow.tv/teamLogos/hobarthurricanes.png",
+ "melbourne renegades": "https://aimages.willow.tv/teamLogos/melbournerenegades.png",
+ "melbourne stars": "https://aimages.willow.tv/teamLogos/melbournestars.png",
+ "perth scorchers": "https://aimages.willow.tv/teamLogos/perthscorchers.png",
+ "sydney sixers": "https://aimages.willow.tv/teamLogos/sydneysixers.png",
+ "sydney thunder": "https://aimages.willow.tv/teamLogos/sydneythunder.png",
+  
+//Caribbean Premier League Teams
+ "antigua & barbuda falcons": "https://aimages.willow.tv/teamLogos/antiguabarbudafalcons.png",
+ "barbados royals": "https://aimages.willow.tv/teamLogos/barbadosroyals.png",
+ "guyana amazon warriors": "https://aimages.willow.tv/teamLogos/guyanaamazonwarriors.png",
+ "st kitts & nevis patriots": "https://aimages.willow.tv/teamLogos/stkittsandnevispatriots.png",
+ "saint lucia kings": "https://aimages.willow.tv/teamLogos/stluciakings.png",
+ "trinbago knight riders": "https://aimages.willow.tv/teamLogos/trinbagoknightriders.png",
+  
+//Major League Cricket Teams
+ "los angeles knight riders": "https://aimages.willow.tv/teamLogos/losangelesknightriders.png",
+ "mi new york": "https://aimages.willow.tv/teamLogos/minewyork.png",
+ "san francisco unicorns": "https://aimages.willow.tv/teamLogos/sanfranciscounicorns.png",
+ "seattle orcas": "https://aimages.willow.tv/teamLogos/seattleorcas.png",
+ "texas super kings": "https://aimages.willow.tv/teamLogos/texassuperkings.png",
+ "washington freedom": "https://aimages.willow.tv/teamLogos/washingtonfreedom.png",
+  
+//The Hundred Teams
+ "birmingham phoenix": "https://aimages.willow.tv/teamLogos/birminghamphoenix.png",
+ "london spirit": "https://aimages.willow.tv/teamLogos/londonspirit.png",
+ "manchester originals": "https://aimages.willow.tv/teamLogos/manchesteroriginals.png",
+ "northern superchargers": "https://aimages.willow.tv/teamLogos/northernsuperchargers.png",
+ "oval invincibles": "https://aimages.willow.tv/teamLogos/ovalinvincibles.png",
+ "southern brave": "https://aimages.willow.tv/teamLogos/southernbrave.png",
+ "trent rockets": "https://aimages.willow.tv/teamLogos/trentrockets.png",
+ "welsh fire": "https://aimages.willow.tv/teamLogos/welshfire.png",
+  
+//SA20 Teams
+ "durban's super giants": "https://aimages.willow.tv/teamLogos/durbanssupergiants.png",
+ "joburg super kings": "https://aimages.willow.tv/teamLogos/joburgsuperkings.png",
+ "mi cape town": "https://aimages.willow.tv/teamLogos/micapecown.png",
+ "paarl royals": "https://aimages.willow.tv/teamLogos/paarlroyals.png",
+ "pretoria capitals": "https://aimages.willow.tv/teamLogos/pretoriacapitals.png",
+ "sunrisers eastern cape": "https://aimages.willow.tv/teamLogos/sunriserseasterncape.png",
+  
+  
+//Global T20 Canada Teams
+ "bangla tigers mississauga": "https://aimages.willow.tv/teamLogos/banglatigersmississauga.png",
+ "brampton wolves": "https://aimages.willow.tv/teamLogos/bramptonwolves.png",
+ "montreal tigers": "https://aimages.willow.tv/teamLogos/montrealtigers.png",
+ "surrey jaguars": "https://aimages.willow.tv/teamLogos/surreyjaguars.png",
+ "toronto nationals": "https://aimages.willow.tv/teamLogos/torontonationals.png",
+ "vancouver knights": "https://aimages.willow.tv/teamLogos/vancouverknights.png",
+  
+//International League T20 Teams
+ "abu dhabi knight riders": "https://aimages.willow.tv/teamLogos/abudhabiknightriders.png",
+ "desert vipers": "https://aimages.willow.tv/teamLogos/desertvipers.png",
+ "dubai capitals": "https://aimages.willow.tv/teamLogos/dubaicapitals.png",
+ "gulf giants": "https://aimages.willow.tv/teamLogos/gulfgiants.png",
+ "mi emirates": "https://aimages.willow.tv/teamLogos/miemirates.png",
+ "sharjah warriors": "https://aimages.willow.tv/teamLogos/sharjahwarriors.png",
+  
+//Bangladesh Premier League Teams
+ "chattogram challengers": "https://aimages.willow.tv/teamLogos/chattogramchallengers.png",
+ "comilla victorians": "https://aimages.willow.tv/teamLogos/comillavictorians.png",
+ "durdanto dhaka": "https://aimages.willow.tv/teamLogos/durdantodhaka.png",
+ "fortune barishal": "https://aimages.willow.tv/teamLogos/fortunebarishal.png",
+ "khulna tigers": "https://aimages.willow.tv/teamLogos/khulnatigers.png",
+ "rangpur riders": "https://aimages.willow.tv/teamLogos/rangpurriders.png",
+ "sylhet strikers": "https://aimages.willow.tv/teamLogos/sylhetstrikers.png",
+
+//Lanka Premier League Teams
+ "colombo kaps": "https://aimages.willow.tv/teamLogos/colombokaps.png",
+ "dambulla sixers": "https://aimages.willow.tv/teamLogos/dambullasixers.png",
+ "galle marvels": "https://aimages.willow.tv/teamLogos/gallemarvels.png",
+ "jaffna kings": "https://aimages.willow.tv/teamLogos/jaffnakings.png",
+ "kandy falcons": "https://aimages.willow.tv/teamLogos/kandyfalcons.png",
+  
+  
+};
+
+const teamMap = { };
+
+function getLogo(team) {
+  const low = team.toLowerCase().trim();
+  for (const k in specialLogos) if (low.includes(k)) return specialLogos[k];
+  for (const k in teamMap) if (low.includes(k)) return `https://images.fotmob.com/image_resources/logo/teamlogo/${teamMap[k]}.png`;
+  return "https://cdn.yosintv.link/cricket.png";
+}
+
+function parseCustomDate(line) {
+  line = line.trim();
+  const months = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,
+                  january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
+  let m = line.match(/^(\d{1,2})\s+([a-zA-Z]+)/i);
+  if (m) { const d=parseInt(m[1]); const mon=months[m[2].toLowerCase()]; if(mon) return `2025-${String(mon).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+  m = line.match(/([a-zA-Z]+)\s*(\d{1,2})/i);
+  if (m) { const mon=months[m[1].toLowerCase()]; const d=parseInt(m[2]); if(mon) return `2025-${String(mon).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+  return null;
+}
+
+// Convert 24h → 12h format with AM/PM
+function format12Hour(time24) {
+  let [h, m] = time24.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${m.toString().padStart(2,'0')} ${ampm}`;
+}
+
+function getTimeStatus(startISO) {
+  const now = new Date();
+  const start = new Date(startISO);
+  const diff = start - now;
+  if (diff > 0) {
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    return {text: `${h}h ${m}m`, cls: "match-status-countdown"};
+  }
+  if (now < new Date(start.getTime() + 2*60*60*1000)) return {text: "Live", cls: "match-status-live"};
+  return {text: "End", cls: "match-status-over"};
+}
+
+function generate(showToast=false) {
+  const raw = document.getElementById('matchInput').value.trim();
+  if (!raw) return;
+
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const matches = [];
+  let currentDate = null;
+  let previewHTML = "";
+
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    const date = parseCustomDate(line);
+    if (date) { currentDate = date; i++; continue; }
+
+    if (/^\d{1,2}:\d{2}$/.test(line)) {
+      const time = line;
+      const matchLine = lines[i+1] || "";
+      const slug = (lines[i+2] || "watch").toLowerCase();
+
+      if (!matchLine.includes(' vs ')) { i++; continue; }
+
+      const [h, m="00"] = time.split(':').map(x=>x.padStart(2,'0'));
+      let useDate = currentDate || new Date().toISOString().slice(0,10);
+      if (!currentDate && parseInt(h)<6) {
+        const next = new Date(); next.setDate(next.getDate()+1);
+        useDate = next.toISOString().slice(0,10);
+      }
+      const start = `${useDate}T${h}:${m}:00+09:00`;
+      const [team1, team2] = matchLine.split(' vs ').map(t=>t.trim());
+
+      const logo1 = getLogo(team1);
+      const logo2 = getLogo(team2);
+      const status = getTimeStatus(start);
+      const time12 = format12Hour(time);
+
+      matches.push({team1,team1_logo:logo1,team2,team2_logo:logo2,start,
+        details_url:`https://blog.cricfoot.net/?yosintv=${slug}`,duration:2});
+
+      previewHTML += `
+        <div class="match-card">
+          <div class="match-card-content">
+            <div class="match-row-teams">
+              <div class="match-team home">
+                <span class="match-team-name">${team1}</span>
+                <img src="${logo1}" onerror="this.src='https://cdn.yosintv.link/cricket.png'">
+              </div>
+              <div class="match-center">
+                <div class="match-local-time">${time12} </div>
+                <div class="match-status ${status.cls}">${status.text}</div>
+              </div>
+              <div class="match-team away">
+                <img src="${logo2}" onerror="this.src='https://cdn.yosintv.link/cricket.png'">
+                <span class="match-team-name">${team2}</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      i += 3;
+    } else i++;
+  }
+
+  const json = JSON.stringify({matches}, null, 4).replace(/},\n/g, '},\n\n');
+  document.getElementById('jsonOutput').textContent = json;
+  document.getElementById('previewContainer').innerHTML = previewHTML || "<p class='text-center text-muted'>No matches to preview</p>";
+
+  localStorage.setItem('footballJSON', json);
+  localStorage.setItem('lastInput', raw);
+
+  if (showToast) toast("Generated + Preview Updated!");
+}
+
+function copyJSON() {
+  navigator.clipboard.writeText(document.getElementById('jsonOutput').textContent);
+  toast("JSON Copied!");
+}
+
+function scrollToPreview() {
+  document.getElementById('previewContainer').scrollIntoView({behavior: 'smooth'});
+  toast("Scrolled to Preview!");
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+window.onload = () => {
+  const saved = localStorage.getItem('lastInput');
+  if (saved) {
+    document.getElementById('matchInput').value = saved;
+    generate();
+  }
+};
+
+document.getElementById('themeToggle').onclick = () => {
+  document.body.classList.toggle('dark-mode');
+  const dark = document.body.classList.contains('dark-mode');
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+  document.getElementById('themeToggle').textContent = dark ? 'Light Mode' : 'Dark Mode';
+};
+
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark-mode');
+  document.getElementById('themeToggle').textContent = 'Light Mode';
+}
+</script>
+
+</body>
+</html>
