@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>YoSinTV: Live Sports Player</title>
+    
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Merriweather:wght@700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+
+<script>
+(function () {
+    setTimeout(function () {
+        (function(s, u, z, p) {
+            s.src = u;
+            s.setAttribute('data-zone', z);
+            p.appendChild(s);
+        })(document.createElement('script'), 'https://bvtpk.com/tag.min.js', 7463304, document.body || document.documentElement);
+    }, 5000);
+})();
+</script>
+  
+  <style>
+        :root {
+            --primary-color: #4385d9; z
+            --secondary-color: #ffffff;
+            --text-color: #333333;
+            --background-color: #f5f7fa;
+            --highlight-bg: #ffe082;
+            --border-radius: 12px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --font-family: 'Poppins', sans-serif;
+            --title-font: 'Merriweather', serif;
+            --button-bg: #2e7d32;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-family); background: var(--background-color); color: var(--text-color); line-height: 1.6; }
+        
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 20px; width: 100%; }
+
+        /* --- HEADER --- */
+.header {
+    background: var(--primary-color);
+    padding: 7px 0;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+        .logo { 
+            font-family: var(--title-font); 
+            font-size: 28px; 
+            font-weight: 700; 
+            color: #fff; 
+            text-decoration: none; 
+        }
+
+        /* --- PLAYER AREA --- */
+        .player-section { margin: 20px 0; background: var(--secondary-color); border-radius: var(--border-radius); padding: 20px; box-shadow: var(--shadow); }
+        .player-wrapper { position: relative; background: #000; border-radius: 8px; overflow: hidden; aspect-ratio: 16/9; }
+        iframe, .plyr, video { width: 100% !important; height: 100% !important; border: none; }
+        .hidden { display: none !important; }
+
+        .promo-link { 
+            display: flex; align-items: center; justify-content: center; gap: 10px; 
+            font-weight: 600; text-decoration: none; color: inherit; 
+            border: 2px solid #ccc; border-radius: 10px; padding: 12px; 
+            margin-bottom: 8px; font-size: 14px; 
+        }
+    
+    .disclaimer {
+    text-align: center;
+    margin: 10px 0;
+    background: var(--highlight-bg);
+    color: var(--highlight-text);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.disclaimer-text {
+    font-weight: 600;
+    font-size: 18px;
+}
+
+
+        /* --- MATCH LIST --- */
+        #yosintv-more-matches-container {
+            padding: 20px;
+            background-color: var(--secondary-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin: 20px 0;
+        }
+        .embed-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .match-list { display: flex; flex-direction: column; gap: 12px; }
+        .match-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 18px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid #e5e7eb;
+            transition: 0.2s;
+        }
+        .match-card:hover { background-color: #f3f4f6; border-color: var(--primary-color); }
+        .team-info { display: flex; align-items: center; gap: 12px; }
+        .team-logo { height: 30px; width: 30px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid #d1d5db; }
+        .vs-text { font-weight: bold; color: #374151; font-size: 14px; }
+        .match-countdown { font-size: 13px; font-weight: 600; color: #4b5563; }
+        .text-red-600 { color: #dc2626; font-weight: bold; animation: blink 1.2s infinite; }
+
+        /* --- DMCA SECTION --- */
+        .dmca-container { margin: 30px 0; padding: 25px; background: var(--secondary-color); border-radius: var(--border-radius); box-shadow: var(--shadow); }
+        .dmca-container h2 { color: var(--primary-color); margin-bottom: 10px; font-size: 20px; }
+        .dmca-container h3 { margin: 20px 0 10px; font-size: 17px; border-left: 4px solid var(--primary-color); padding-left: 10px; }
+        .dmca-container p { font-size: 14px; color: #555; text-align: justify; line-height: 1.7; }
+
+        /* --- FOOTER --- */
+        .footer-bottom { text-align: center; padding: 40px 20px; border-top: 1px solid #ddd; font-size: 13px; color: #888; margin-top: 20px; }
+        .footer-links { margin-bottom: 15px; }
+        .footer-links a { color: #555; text-decoration: none; margin: 0 12px; font-weight: 500; transition: color 0.2s; }
+        .footer-links a:hover { color: var(--primary-color); }
+        
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        @media (max-width: 600px) {
+            .logo { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="container">
+            <a href="index.html" class="logo">YoSinTV</a>
+        </div>
+    </header>
+
+  
+    <main class="container">
+        <section class="player-section">
+            <a href="https://www.cricfoot.net/?ads=live" class="promo-link">
+                <span style="width:8px; height:8px; background:red; border-radius:50%; animation: blink 1.2s infinite;"></span> Watch Latest Highlights
+            </a>
+          
+          <div class="disclaimer">
+                    <span class="disclaimer-text">Skip 1-2 Ads | Watch Peacefully</span>
+                </div>
+          
+          
+            <div class="player-wrapper">
+                <iframe id="iframe-player" class="hidden" allowfullscreen></iframe>
+                <video id="plyr-video" class="hidden" playsinline controls></video>
+                <div id="error-display" class="hidden" style="color:#fff; text-align:center; padding-top:20%;">
+                    <h3>Select a match from the schedule below</h3>
+                </div>
+            </div>
+            <button onclick="toggleFullscreen()" style="width:100%; margin-top:15px; padding:15px; background:var(--button-bg); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight: 700;">
+                <i class="fas fa-expand"></i> Full Screen Mode
+            </button>
+        </section>
+
+        <div id="yosintv-more-matches-container">
+            <h3 class="embed-title">🔥 Live & Upcoming Matches</h3>
+            <div id="more-matches-embed" class="match-list">
+                <p style="text-align:center; padding:10px; color:#888;">Fetching latest schedules...</p>
+            </div>
+        </div>
+
+        <section class="dmca-container">
+            <h2>YoSinTV - DMCA</h2>
+            <p>YoSinTV does not host any media content on its own site. Our site visitors may use external or third-party services to show content. We notify all copyright owners that the links and media shared by visitors are hosted elsewhere on the web or embedded from various sites.</p>
+            
+            <h3>What is YoSinTV?</h3>
+            <p>YoSinTV is a sports streaming platform covering Cricket Matches, World Cup, International/Domestic Matches, Football Matches, and more.</p>
+        </section>
+
+        <footer class="footer-bottom">
+            <div class="footer-links">
+                <a href="index.html">Home</a>
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+            </div>
+            <p>© 2025 YoSinTV. All rights reserved.</p>
+        </footer>
+    </main>
+
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <script>
+        // --- BASE64 Processing (Improved Version) ---
+        const encodeB64 = (str) => {
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+                return String.fromCharCode('0x' + p1);
+            })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        };
+
+        const decodeB64 = (str) => {
+            try {
+                let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) base64 += '=';
+                return decodeURIComponent(Array.prototype.map.call(atob(base64), (c) => {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+            } catch (e) { return null; }
+        };
+
+        function initPlayer() {
+            const params = new URLSearchParams(window.location.search);
+            let src = params.get('src');
+            if (!src) { document.getElementById('error-display').classList.remove('hidden'); return; }
+            
+            if (src.startsWith('http')) {
+                const encoded = encodeB64(src);
+                window.history.replaceState({}, '', '?src=' + encoded);
+                loadMedia(src);
+            } else {
+                loadMedia(decodeB64(src));
+            }
+        }
+
+        function loadMedia(url) {
+            if (!url) return;
+            const video = document.getElementById('plyr-video');
+            const iframe = document.getElementById('iframe-player');
+            const isVideo = /\.(m3u8|mp4|webm)/i.test(url);
+
+            if (isVideo) {
+                video.classList.remove('hidden');
+                new Plyr(video);
+                if (url.includes('.m3u8') && Hls.isSupported()) {
+                    const hls = new Hls(); hls.loadSource(url); hls.attachMedia(video);
+                } else { video.src = url; }
+            } else {
+                iframe.src = url; iframe.classList.remove('hidden');
+            }
+        }
+
+        const getMatchCountdown = (startIso) => {
+            const startMs = new Date(startIso).getTime();
+            const now = Date.now();
+            const diff = startMs - now;
+            if (diff < 0) {
+                if (Math.abs(diff) < 4 * 3600000) return '<span class="text-red-600">Live Now</span>';
+                return '<span style="color:#9ca3af">Finished</span>';
+            }
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        };
+
+        async function loadMatches() {
+            const more = document.getElementById('more-matches-embed');
+            const apis = ['https://www.yosintv.link/api/cricket.json', 'https://www.yosintv.link/api/football.json'];
+            try {
+                let allMatches = [];
+                for (const api of apis) {
+                    const r = await fetch(api);
+                    const json = await r.json();
+                    if (json.matches) allMatches.push(...json.matches);
+                }
+                const active = allMatches
+                    .filter(m => new Date(m.start).getTime() > Date.now() - 14400000)
+                    .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+                more.innerHTML = '';
+                active.forEach(m => {
+                    const card = document.createElement('a');
+                    card.href = `?src=${m.stream_url ? encodeB64(m.stream_url) : ''}`;
+                    card.className = 'match-card';
+                    card.innerHTML = `
+                        <span class="team-info">
+                            <img src="${m.team1_logo}" class="team-logo" onerror="this.src='https://via.placeholder.com/30'">
+                            <span class="vs-text"> vs </span>
+                            <img src="${m.team2_logo}" class="team-logo" onerror="this.src='https://via.placeholder.com/30'">
+                        </span>
+                        <span class="match-countdown" data-start="${m.start}">${getMatchCountdown(m.start)}</span>`;
+                    more.appendChild(card);
+                });
+            } catch (e) { more.innerHTML = '<p>Error loading matches.</p>'; }
+        }
+
+        function toggleFullscreen() {
+            const el = document.querySelector('.player-wrapper');
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        }
+
+        window.onload = () => { initPlayer(); loadMatches(); };
+    </script>
+  
+  <script>
+(function() {
+  const REDIRECT_KEY = "lastRedirectTime"; // localStorage key
+  const REDIRECT_URL = "https://yosintv-api.pages.dev/api/ads"; 
+  const DELAY = 70 * 1000; // 80 seconds
+  const COOLDOWN = 5 * 60 * 60 * 1000; // 5 hours in ms
+
+  const lastRedirectTime = localStorage.getItem(REDIRECT_KEY);
+  const now = Date.now();
+
+  // If never redirected OR 5+ hours have passed
+  if (!lastRedirectTime || (now - parseInt(lastRedirectTime, 10)) >= COOLDOWN) {
+    setTimeout(() => {
+      // Save current time
+      localStorage.setItem(REDIRECT_KEY, Date.now().toString());
+
+      // Redirect
+      window.location.href = REDIRECT_URL;
+    }, DELAY);
+  }
+})();
+</script>
+
+  
+       <!-- BEGIN: Powered by Supercounters.com -->
+        <div style="position:fixed;top:0;left:0;width:100%;height:1px;overflow:hidden;visibility:hidden;z-index:9999;">
+            <script id="_wauela">var _wau = _wau || []; _wau.push(["dynamic", "41j574olh0", "ela", "c4302bffffff", "small"]);
+            </script><script async src="//waust.at/d.js"></script>
+            <script type="text/javascript" src="//widget.supercounters.com/ssl/online_i.js"></script>
+            <script type="text/javascript">sc_online_i(1665792,"ffffff","e61c1c");</script>
+            <br><noscript><a href="https://www.supercounters.com/">free online counter</a></noscript>
+        </div>
+  
+  
+</body>
+</html>
