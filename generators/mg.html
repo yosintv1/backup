@@ -870,8 +870,8 @@ function generate(showToast = false) {
 
   // SAME SORTING FOR BOTH JSON AND PREVIEW
   const sortedMatches = [...matches].sort((a, b) => {
-    const aReal = a.details_url.startsWith("https://blog.cricfoot.net/");
-    const bReal = b.details_url.startsWith("https://blog.cricfoot.net/");
+    const aReal = a.details_url.startsWith("https://www.cricfoot.net/match");
+    const bReal = b.details_url.startsWith("https://www.cricfoot.net/match");
     if (aReal && !bReal) return -1;
     if (!aReal && bReal) return 1;
     return 0;
